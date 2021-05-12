@@ -9,7 +9,8 @@ base_url = "https://cdn-api.co-vin.in/api"
 
 def define_arguments(parser):
     parser.add_argument("--pin", 
-                        dest="pin", 
+                        dest="pin",
+                        nargs="*",
                         help="PIN Code (6 digits) to find vaccine centers")
     parser.add_argument("--date", 
                         dest="date", 
@@ -17,9 +18,11 @@ def define_arguments(parser):
     parser.add_argument("--age",
                         dest="min_age",
                         type=int,
+                        choices=[18, 45],
                         help="Minimum Age Limit - 18 or 45")
     parser.add_argument("--vaccine",
                         dest="vaccine",
+                        choices=["COVAXIN", "COVISHIELD"],
                         help="Preferred Vaccine: COVAXIN or COVISHIELD. Shows any available by default")
 
 def terminate(error):
@@ -29,16 +32,13 @@ def terminate(error):
 def validate_input(args):
     if not args.pin or not args.date:
         terminate("Valid date and PIN Code not found")
-    if not re.match(r"^\d\d\d\d\d\d$", args.pin):
-        terminate("Invalid PinCode")
+    for pin in args.pin:
+        if not re.match(r"^\d\d\d\d\d\d$", pin):
+            terminate("Invalid PIN Code")
     try:
         datetime.strptime(args.date, "%d-%m-%Y")
-    except ValueError as err:
+    except ValueError:
         terminate("Invalid Date format - use dd-mm-yyyy")
-    if args.min_age and args.min_age not in {18, 45}:
-        terminate("Invalid minimum age - use 18 or 45")
-    if args.vaccine and args.vaccine.upper() not in {"COVAXIN", "COVISHIELD"}:
-        terminate("Invalid Vaccine preference - specify either COVAXIN or COVISHIELD")
     
 def get_vaccine_centers_by_pin(pin, date):
     api_endpoint = "/v2/appointment/sessions/public/calendarByPin"
@@ -82,9 +82,10 @@ if __name__ == "__main__":
     define_arguments(parser)
     args = parser.parse_args()
     validate_input(args)
-    vaccine_centers = get_vaccine_centers_by_pin(args.pin, args.date)
-    if(args.min_age):
-        vaccine_centers = filter_centers_by_attribute(vaccine_centers, "min_age_limit", args.min_age)
-    if(args.vaccine):
-        vaccine_centers = filter_centers_by_attribute(vaccine_centers, "vaccine", args.vaccine.upper())
-    display_centers(vaccine_centers)
+    for pin in args.pin:
+        vaccine_centers = get_vaccine_centers_by_pin(pin, args.date)
+        if(args.min_age):
+            vaccine_centers = filter_centers_by_attribute(vaccine_centers, "min_age_limit", args.min_age)
+        if(args.vaccine):
+            vaccine_centers = filter_centers_by_attribute(vaccine_centers, "vaccine", args.vaccine.upper())
+        display_centers(vaccine_centers)
