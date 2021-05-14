@@ -3,17 +3,19 @@ import argparse
 import re
 import sys
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 
 base_url = "https://cdn-api.co-vin.in/api"
-
 
 def define_arguments(parser):
     parser.add_argument("--pin", 
                         dest="pin",
                         nargs="*",
+                        required=True,
                         help="PIN Code (6 digits) to find vaccine centers")
     parser.add_argument("--date", 
-                        dest="date", 
+                        dest="date",
+                        required=True, 
                         help="Date (dd-mm-yyyy) at which appointment is sought")
     parser.add_argument("--age",
                         dest="min_age",
@@ -77,15 +79,20 @@ def display_centers(centers):
             print("Minimum Age Limit: ", session.get("min_age_limit"))
             print("Vaccine: ", session.get("vaccine"), "\n")
 
+def run(pin):
+    vaccine_centers = get_vaccine_centers_by_pin(pin, args.date)
+    if(args.min_age):
+        vaccine_centers = filter_centers_by_attribute(vaccine_centers, "min_age_limit", args.min_age)
+    if(args.vaccine):
+        vaccine_centers = filter_centers_by_attribute(vaccine_centers, "vaccine", args.vaccine.upper())
+    display_centers(vaccine_centers)
+
+parser = argparse.ArgumentParser()
+define_arguments(parser)
+args = parser.parse_args()
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    define_arguments(parser)
-    args = parser.parse_args()
     validate_input(args)
-    for pin in args.pin:
-        vaccine_centers = get_vaccine_centers_by_pin(pin, args.date)
-        if(args.min_age):
-            vaccine_centers = filter_centers_by_attribute(vaccine_centers, "min_age_limit", args.min_age)
-        if(args.vaccine):
-            vaccine_centers = filter_centers_by_attribute(vaccine_centers, "vaccine", args.vaccine.upper())
-        display_centers(vaccine_centers)
+    with ThreadPoolExecutor() as executor:
+        executor.map(run, args.pin)
+        
