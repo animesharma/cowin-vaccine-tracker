@@ -3,7 +3,7 @@ import argparse
 import re
 import sys
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 base_url = "https://cdn-api.co-vin.in/api"
 
@@ -50,6 +50,7 @@ def get_vaccine_centers_by_pin(pin, date):
     }
     response = requests.get(url=base_url + api_endpoint, params=parameters, headers={"User-Agent": "PostmanRuntime/8.3.1"})
     if response.ok:
+#        print(response.text)
         return response.json().get("centers")
     else:
         terminate("Unable to reach CoWin servers, please try again later.")
@@ -67,6 +68,7 @@ def filter_centers_by_attribute(vaccine_centers, attribute, value):
     return filtered_centers
 
 def display_centers(centers):
+#    print("here")
     if not centers:
         print("No available slots, please try again later.")
         return
@@ -79,20 +81,23 @@ def display_centers(centers):
             print("Minimum Age Limit: ", session.get("min_age_limit"))
             print("Vaccine: ", session.get("vaccine"), "\n")
 
-def run(pin):
-    vaccine_centers = get_vaccine_centers_by_pin(pin, args.date)
-    if(args.min_age):
-        vaccine_centers = filter_centers_by_attribute(vaccine_centers, "min_age_limit", args.min_age)
-    if(args.vaccine):
-        vaccine_centers = filter_centers_by_attribute(vaccine_centers, "vaccine", args.vaccine.upper())
-    display_centers(vaccine_centers)
-
-parser = argparse.ArgumentParser()
-define_arguments(parser)
-args = parser.parse_args()
-
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    define_arguments(parser)
+    args = parser.parse_args()
     validate_input(args)
     with ThreadPoolExecutor() as executor:
-        executor.map(run, args.pin)
+        future_centers = {executor.submit(get_vaccine_centers_by_pin, pin, args.date): pin for pin in args.pin}
+        for future in as_completed(future_centers):
+            pin = future_centers[future]
+            try:
+                vaccine_centers = future.result()
+                if(args.min_age):
+                    vaccine_centers = filter_centers_by_attribute(vaccine_centers, "min_age_limit", args.min_age)
+                if(args.vaccine):
+                    vaccine_centers = filter_centers_by_attribute(vaccine_centers, "vaccine", args.vaccine.upper())
+                display_centers(vaccine_centers)
+            except Exception as exc:
+                print('%r generated an exception: %s' % (pin, exc))
+    
         
