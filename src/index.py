@@ -4,7 +4,7 @@ import re
 import sys
 from datetime import datetime
 from random import randint
-from time import sleep
+from time import sleep, strftime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class CowinVaccineTracker:
@@ -19,10 +19,6 @@ class CowinVaccineTracker:
                             nargs="*",
                             required=True,
                             help="PIN Code (6 digits) to find vaccine centers")
-        parser.add_argument("--date", 
-                            dest="date",
-                            required=True, 
-                            help="Date (dd-mm-yyyy) at which appointment is sought")
         parser.add_argument("--age",
                             dest="min_age",
                             type=int,
@@ -42,15 +38,11 @@ class CowinVaccineTracker:
         sys.exit(-1)
 
     def validate_input(self, args):
-        if not args.pin or not args.date:
-            self.terminate("Valid date and PIN Code not found")
+        if not args.pin:
+            self.terminate("Valid PIN Code not found")
         for pin in args.pin:
             if not re.match(r"^\d\d\d\d\d\d$", pin):
                 self.terminate("Invalid PIN Code")
-        try:
-            datetime.strptime(args.date, "%d-%m-%Y")
-        except ValueError:
-            self.terminate("Invalid Date format - use dd-mm-yyyy")
 
     def get_vaccine_centers_by_pin(self, pin, date):
         api_endpoint = "/v2/appointment/sessions/public/calendarByPin"
@@ -97,7 +89,7 @@ if __name__ == "__main__":
     tracker.validate_input(args)
     while(True):
         with ThreadPoolExecutor() as executor:
-            future_centers = {executor.submit(tracker.get_vaccine_centers_by_pin, pin, args.date): pin for pin in args.pin}
+            future_centers = {executor.submit(tracker.get_vaccine_centers_by_pin, pin, strftime("%d-%m-%Y")): pin for pin in args.pin}
             for future in as_completed(future_centers):
                 pin = future_centers[future]
                 try:
