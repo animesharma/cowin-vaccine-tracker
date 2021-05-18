@@ -3,6 +3,8 @@ import argparse
 import re
 import sys
 from datetime import datetime
+from random import randint
+from time import sleep
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class CowinVaccineTracker:
@@ -30,6 +32,10 @@ class CowinVaccineTracker:
                             dest="vaccine",
                             choices=["COVAXIN", "COVISHIELD"],
                             help="Preferred Vaccine: COVAXIN or COVISHIELD. Shows any available by default")
+        parser.add_argument("--loop",
+                            dest="loop",
+                            action="store_true",
+                            help="Specify option to run script on a loop")
     
     def terminate(error):
         print("Error: " + error)
@@ -77,28 +83,34 @@ class CowinVaccineTracker:
             print("No available slots, please try again later.")
             return
         for center in centers:
+            print(center.get("pincode"))
             for session in center.get("sessions"):
                 print(center.get("name"), " - ", center.get("address"), " - ", center.get("district_name"), " - ", center.get("state_name"))
                 print("Date: ", session.get("date"))
                 print("Available Capacity: ", session.get("available_capacity"))
                 print("Minimum Age Limit: ", session.get("min_age_limit"))
-                print("Vaccine: ", session.get("vaccine"), "\n")
+                print("Vaccine: ", session.get("vaccine"), "\n") 
 
 if __name__ == "__main__":
     tracker = CowinVaccineTracker()
     args = tracker.parser.parse_args()
     tracker.validate_input(args)
-    with ThreadPoolExecutor() as executor:
-        future_centers = {executor.submit(tracker.get_vaccine_centers_by_pin, pin, args.date): pin for pin in args.pin}
-        for future in as_completed(future_centers):
-            pin = future_centers[future]
-            try:
-                vaccine_centers = future.result()
-                if(args.min_age):
-                    vaccine_centers = tracker.filter_centers_by_attribute(vaccine_centers, "min_age_limit", args.min_age)
-                if(args.vaccine):
-                    vaccine_centers = tracker.filter_centers_by_attribute(vaccine_centers, "vaccine", args.vaccine.upper())
-                tracker.display_centers(vaccine_centers)
-            except Exception as exc:
-                print('%r generated an exception: %s' % (pin, exc))
-                        
+    while(True):
+        with ThreadPoolExecutor() as executor:
+            future_centers = {executor.submit(tracker.get_vaccine_centers_by_pin, pin, args.date): pin for pin in args.pin}
+            for future in as_completed(future_centers):
+                pin = future_centers[future]
+                try:
+                    vaccine_centers = future.result()
+                    if(args.min_age):
+                        vaccine_centers = tracker.filter_centers_by_attribute(vaccine_centers, "min_age_limit", args.min_age)
+                    if(args.vaccine):
+                        vaccine_centers = tracker.filter_centers_by_attribute(vaccine_centers, "vaccine", args.vaccine.upper())
+                    tracker.display_centers(vaccine_centers)
+                except Exception as exc:
+                    print('%r generated an exception: %s' % (pin, exc))
+        if not args.loop:
+            break
+        wait_time = randint(45, 90)
+        sleep(wait_time)
+       
