@@ -1,5 +1,6 @@
 # CoWin Vaccine Tracker
 Get vaccine availabilty notification on your email!
+
 Requires an India based IP Address.
 ​
 ## Installation
@@ -112,4 +113,4 @@ Settings for the SMTP client are taken from the configuration file located at `.
 }
 ​
 ```
-These credentials will be used to send email notifications about vaccine availability to the recipient specified by the `--recipient` argument.
+These credentials will be used to send email notifications about vaccine availability to the recipient specified by the `--recipient` argument. Ensure that this information is accurately filled, otherwise email notifications will not work.
