@@ -1,5 +1,5 @@
-import requests
 import argparse
+import requests
 
 from vaccine_helper import VaccineHelper
 
@@ -11,34 +11,36 @@ class FindDistrictID(VaccineHelper):
         self.parser = argparse.ArgumentParser()
         self.define_arguments(self.parser)
 
-    def define_arguments(self, parser):
-        parser.add_argument("--state", 
+    @staticmethod
+    def define_arguments(parser):
+        parser.add_argument("--state",
                             dest="state",
                             nargs="+",
                             required=True,
                             help="Enter state to list District IDs")
-    
+
     def validate_input(self, input_state):
         if not input_state.isalpha():
             self.terminate("invaid state name")
 
     def get_states(self):
-        response = requests.get(self.base_url + self.state_id_api_endpoint, headers={"User-Agent": "PostmanRuntime/8.5"})
+        response = requests.get(self.base_url + self.state_id_api_endpoint, \
+                                headers={"User-Agent": "PostmanRuntime/8.5"})
         if response.ok:
             return response.json().get("states")
-        else:
-            self.terminate("Failed to fetch State IDs, please try again later.")
+        self.terminate("Failed to fetch State IDs, please try again later.")
 
     def get_district_ids(self, state_id):
-        response = requests.get(self.base_url + self.district_id_api_endpoint + str(state_id), headers={"User-Agent": "PostmanRuntime/8.5"})
+        response = requests.get(self.base_url + self.district_id_api_endpoint + str(state_id), \
+                                headers={"User-Agent": "PostmanRuntime/8.5"})
         if response.ok:
             return response.json().get("districts")
-        else:
-            self.terminate("Failed to fetch District IDs, please try again later.")
+        self.terminate("Failed to fetch District IDs, please try again later.")
 
     @staticmethod
     def compare(str1, str2):
-        return [char.lower() for char in str1 if char.isalpha()] == [char.lower() for char in str2 if char.isalpha()]
+        return [char.lower() for char in str1 if char.isalpha()] == \
+               [char.lower() for char in str2 if char.isalpha()]
 
     def match_state_to_id(self, input_state, states):
         for state in states:

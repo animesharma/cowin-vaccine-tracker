@@ -2,7 +2,7 @@ import argparse
 import re
 
 from random import randint
-from time import sleep, strftime
+from time import sleep, strftime, localtime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from vaccine_helper import VaccineHelper
@@ -14,13 +14,14 @@ class FindVaccineCenter(VaccineHelper):
         self.parser = argparse.ArgumentParser()
         self.define_arguments(self.parser)
 
-    def define_arguments(self, parser):
-        parser.add_argument("--district", 
+    @staticmethod
+    def define_arguments(parser):
+        parser.add_argument("--district",
                             dest="district_id",
                             type=int,
                             nargs="*",
                             help="District ID (3 digits) to find vaccine centers")
-        parser.add_argument("--pin", 
+        parser.add_argument("--pin",
                             dest="pin",
                             type=int,
                             nargs="*",
@@ -33,12 +34,13 @@ class FindVaccineCenter(VaccineHelper):
         parser.add_argument("--vaccine",
                             dest="vaccine",
                             choices=["COVAXIN", "COVISHIELD", "SPUTNIK V"],
-                            help="Preferred Vaccine: COVAXIN, COVISHIELD or SUPTNIK V. Shows any available by default")
+                            help="Preferred Vaccine: COVAXIN, COVISHIELD or SUPTNIK V. \
+                                  Shows any available by default")
         parser.add_argument("--dose",
                             dest="dose",
                             choices=["first", "second"],
                             help="Filter by first or second dose")
-        parser.add_argument("--recipient", 
+        parser.add_argument("--recipient",
                             dest="recipient",
                             help="Email address to notify vaccine availability")
         parser.add_argument("--loop",
@@ -80,26 +82,26 @@ if __name__ == "__main__":
     tracker = FindVaccineCenter()
     args = tracker.parser.parse_args()
     tracker.validate_input(args)
-    while(True):
+    while True:
         email_sent = False
         with ThreadPoolExecutor() as executor:
             if args.district_id:
-                future_centers = {executor.submit(tracker.get_vaccine_centers_by_district, district_id, strftime("%d-%m-%Y")):\
-                                 district_id for district_id in args.district_id}
+                future_centers = {executor.submit(tracker.get_vaccine_centers_by_district, district_id, \
+                                 strftime("%d-%m-%Y")): district_id for district_id in args.district_id}
             elif args.pin:
-                future_centers = {executor.submit(tracker.get_vaccine_centers_by_pin, pin, strftime("%d-%m-%Y")):\
-                                 pin for pin in args.pin}
+                future_centers = {executor.submit(tracker.get_vaccine_centers_by_pin, pin, \
+                                 strftime("%d-%m-%Y")): pin for pin in args.pin}
             for future in as_completed(future_centers):
                 identifier = future_centers[future]
                 try:
                     centers = tracker.filter_centers_by_attribute(future.result(), "available_capacity", "greater", 0)
-                    if(args.min_age):
+                    if args.min_age:
                         centers = tracker.filter_centers_by_attribute(centers, "min_age_limit", "equals", args.min_age)
-                    if(args.vaccine):
+                    if args.vaccine:
                         centers = tracker.filter_centers_by_attribute(centers, "vaccine", "equals", args.vaccine.upper())
-                    if(args.dose and args.dose.lower() == "first"):
+                    if args.dose and args.dose.lower() == "first":
                         centers = tracker.filter_centers_by_attribute(centers, "available_capacity_dose1", "greater", 0)
-                    if(args.dose and args.dose.lower() == "second"):
+                    if args.dose and args.dose.lower() == "second":
                         centers = tracker.filter_centers_by_attribute(centers, "available_capacity_dose2", "greater", 0)
                     if centers:
                         message_body, checksum = tracker.create_formatted_message(centers)
@@ -109,7 +111,8 @@ if __name__ == "__main__":
                             tracker.sent_email_checksums.add(checksum)
                             email_sent = True
                     else:
-                        print(identifier, " - No vaccine appointments available at this time.")
+                        print(strftime('%Y-%m-%d %H:%M:%S -', localtime()), identifier, \
+                             "- No vaccine appointments available at this time.")
                 except Exception as exc:
                     print('Identifier %r generated an exception: %s' % (identifier, exc))
         if not args.loop:

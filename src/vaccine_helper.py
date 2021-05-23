@@ -1,9 +1,9 @@
 import sys
-import requests
 import json
 import hashlib
 import smtplib
 from email.mime.text import MIMEText
+import requests
 
 class VaccineHelper:
 
@@ -17,11 +17,11 @@ class VaccineHelper:
         sys.exit(-1)
 
     def get_vaccine_centers(self, api_endpoint, parameters):
-        response = requests.get(url=self.base_url + api_endpoint, params=parameters, headers={"User-Agent": "PostmanRuntime/8"})
+        response = requests.get(url=self.base_url + api_endpoint, params=parameters, \
+                                headers={"User-Agent": "PostmanRuntime/8"})
         if response.ok:
             return response.json().get("centers")
-        else:
-            self.terminate("Unable to reach CoWin servers, please try again later.")
+        self.terminate("Unable to reach CoWin servers, please try again later.")
 
     @staticmethod
     def filter_centers_by_attribute(vaccine_centers, attribute, operand, value):
@@ -51,8 +51,8 @@ class VaccineHelper:
                             center.get("address") + " - " + center.get("district_name") + " - " + \
                             center.get("state_name") + " - " + str(center.get("pincode")) + "\n\n"
 
-            for index, session in enumerate(center.get("sessions")):   
-                message_body += "Session " + str(index + 1) + ":\n\n"         
+            for index, session in enumerate(center.get("sessions")):
+                message_body += "Session " + str(index + 1) + ":\n\n"
                 message_body += "\tDate: " + session.get("date") + "\n"
                 message_body += "\tAvailable First Dose Capacity: " + str(session.get("available_capacity_dose1")) + "\n"
                 message_body += "\tAvailable Second Dose Capacity: " + str(session.get("available_capacity_dose2")) + "\n"
@@ -67,7 +67,7 @@ class VaccineHelper:
         try:
             with open("./config/email_credentials.json") as config_file:
                 email_config = json.load(config_file)
-        except Exception:
+        except FileNotFoundError:
             self.terminate("Could not open email configuration file")
         sender = email_config.get("sender_email")
         message = MIMEText(content)
