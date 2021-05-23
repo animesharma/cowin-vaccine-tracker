@@ -1,6 +1,7 @@
 import sys
 import requests
 import json
+import hashlib
 import smtplib
 from email.mime.text import MIMEText
 
@@ -8,6 +9,7 @@ class VaccineHelper:
 
     def __init__(self):
         self.base_url = "https://cdn-api.co-vin.in/api"
+        self.sent_email_checksums = {}
 
     @staticmethod
     def terminate(error):
@@ -38,23 +40,11 @@ class VaccineHelper:
                 filtered_centers.append(center)
         return filtered_centers
 
-    def send_email_notification(self, recipient, content):
-        try:
-            with open("./config/email_credentials.json") as config_file:
-                email_config = json.load(config_file)
-        except Exception:
-            self.terminate("Could not open email configuration file")
-        sender = email_config.get("sender_email")
-        message = MIMEText(content)
-        message["Subject"] = "Vaccine Availability Notification"
-        message["From"] = sender
-        message["To"] = recipient
-        with smtplib.SMTP_SSL(email_config.get("smtp_url"), email_config.get("smtp_port")) as mail_server:
-            mail_server.login(sender, email_config.get("password"))
-            mail_server.sendmail(sender, recipient, message.as_string())
-
     @staticmethod
-    def create_formatted_message(centers):
+    def calculate_checksum(message_body):
+        return hashlib.blake2b(message_body.encode("utf-8"), digest_size=24).hexdigest()
+
+    def create_formatted_message(self, centers):
         message_body = "Available Vaccine Centers:\n\n"
         for index, center in enumerate(centers):
             message_body += "Center " + str(index + 1) + ": " + center.get("name") + " - " + \
@@ -70,4 +60,20 @@ class VaccineHelper:
                 message_body += "\tVaccine: " + session.get("vaccine") + "\n"
                 message_body += "\tFee Type: " + center.get("fee_type") + "\n\n"
         message_body += "Book your slot now at: https://selfregistration.cowin.gov.in/\n\n"
-        return message_body
+        checksum = self.calculate_checksum(message_body)
+        return message_body, checksum
+
+    def send_email_notification(self, recipient, content):
+        try:
+            with open("./config/email_credentials.json") as config_file:
+                email_config = json.load(config_file)
+        except Exception:
+            self.terminate("Could not open email configuration file")
+        sender = email_config.get("sender_email")
+        message = MIMEText(content)
+        message["Subject"] = "Vaccine Availability Notification"
+        message["From"] = sender
+        message["To"] = recipient
+        with smtplib.SMTP_SSL(email_config.get("smtp_url"), email_config.get("smtp_port")) as mail_server:
+            mail_server.login(sender, email_config.get("password"))
+            mail_server.sendmail(sender, recipient, message.as_string())
