@@ -38,9 +38,12 @@ class VaccineHelper:
                 filtered_centers.append(center)
         return filtered_centers
 
-    @staticmethod
-    def send_email_notification(recipient, content):
-        email_config = json.loads("./config/email_config.json")
+    def send_email_notification(self, recipient, content):
+        try:
+            with open("./config/email_credentials.json") as config_file:
+                email_config = json.load(config_file)
+        except Exception:
+            self.terminate("Could not open email configuration file")
         sender = email_config.get("sender_email")
         message = MIMEText(content)
         message["Subject"] = "Vaccine Availability Notification"
@@ -61,7 +64,8 @@ class VaccineHelper:
             for index, session in enumerate(center.get("sessions")):   
                 message_body += "Session " + str(index + 1) + ":\n\n"         
                 message_body += "\tDate: " + session.get("date") + "\n"
-                message_body += "\tAvailable Capacity: " + str(session.get("available_capacity")) + "\n"
+                message_body += "\tAvailable First Dose Capacity: " + str(session.get("available_capacity_dose1")) + "\n"
+                message_body += "\tAvailable Second Dose Capacity: " + str(session.get("available_capacity_dose2")) + "\n"
                 message_body += "\tMinimum Age Limit: " + str(session.get("min_age_limit")) + "\n"
                 message_body += "\tVaccine: " + session.get("vaccine") + "\n"
                 message_body += "\tFee Type: " + center.get("fee_type") + "\n\n"

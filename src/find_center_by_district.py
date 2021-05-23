@@ -74,16 +74,16 @@ if __name__ == "__main__":
                     if(args.vaccine):
                         centers = tracker.filter_centers_by_attribute(centers, "vaccine", "equals", args.vaccine.upper())
                     if(args.dose and args.dose.lower() == "first"):
-                        centers = tracker.filter_centers_by_attribute(centers, "available_capacity_first_dose", "greater", 0)
+                        centers = tracker.filter_centers_by_attribute(centers, "available_capacity_dose1", "greater", 0)
                     if(args.dose and args.dose.lower() == "second"):
-                        centers = tracker.filter_centers_by_attribute(centers, "available_capacity_second_dose", "greater", 0)
+                        centers = tracker.filter_centers_by_attribute(centers, "available_capacity_dose2", "greater", 0)
                     if centers: 
                         message_body = tracker.create_formatted_message(centers)
                         print(message_body)
                         if args.recipient:
                             tracker.send_email_notification(args.recipient, message_body)
                 except Exception as exc:
-                    print('%r generated an exception: %s' % (district_id, exc))
+                    print('District ID %r generated an exception: %s' % (district_id, exc))
         if not args.loop:
             break
         wait_time = randint(45, 90)
