@@ -1,3 +1,4 @@
+"""Module containing helper functions for cowin-vaccine-tracker"""
 import sys
 import json
 import hashlib
@@ -6,17 +7,20 @@ from email.mime.text import MIMEText
 import requests
 
 class VaccineHelper:
-
+    """Class containing helper functions"""
     def __init__(self):
+        """Constructor"""
         self.base_url = "https://cdn-api.co-vin.in/api"
         self.sent_email_checksums = {}
 
     @staticmethod
     def terminate(error):
+        """Function to display an error message and exit the program"""
         print("Error: " + error)
         sys.exit(-1)
 
     def get_vaccine_centers(self, api_endpoint, parameters):
+        """Function to fetch vaccine centers from CoWin Servers"""
         response = requests.get(url=self.base_url + api_endpoint, params=parameters, \
                                 headers={"User-Agent": "PostmanRuntime/8"})
         if response.ok:
@@ -25,6 +29,7 @@ class VaccineHelper:
 
     @staticmethod
     def filter_centers_by_attribute(vaccine_centers, attribute, operand, value):
+        """Function to filter vaccine centers based on a given attribute"""
         filtered_centers = []
         for center in vaccine_centers:
             filtered_sessions = []
@@ -42,17 +47,18 @@ class VaccineHelper:
 
     @staticmethod
     def calculate_checksum(message_body):
+        """Function to calulate the BLAKE2b checksum of a string"""
         return hashlib.blake2b(message_body.encode("utf-8"), digest_size=24).hexdigest()
 
     def create_formatted_message(self, centers):
+        """Function to create a formatted message with details about available vaccine appointments"""
         message_body = "Available Vaccine Centers:\n\n"
-        for index, center in enumerate(centers):
-            message_body += "Center " + str(index + 1) + ": " + center.get("name") + " - " + \
+        for center_index, center in enumerate(centers):
+            message_body += "Center " + str(center_index + 1) + ": " + center.get("name") + " - " + \
                             center.get("address") + " - " + center.get("district_name") + " - " + \
                             center.get("state_name") + " - " + str(center.get("pincode")) + "\n\n"
-
-            for index, session in enumerate(center.get("sessions")):
-                message_body += "Session " + str(index + 1) + ":\n\n"
+            for session_index, session in enumerate(center.get("sessions")):
+                message_body += "Session " + str(session_index + 1) + ":\n\n"
                 message_body += "\tDate: " + session.get("date") + "\n"
                 message_body += "\tAvailable First Dose Capacity: " + str(session.get("available_capacity_dose1")) + "\n"
                 message_body += "\tAvailable Second Dose Capacity: " + str(session.get("available_capacity_dose2")) + "\n"
@@ -64,11 +70,12 @@ class VaccineHelper:
         return message_body, checksum
 
     def send_email_notification(self, recipient, content):
+        """Function to send a vaccine availability notification email"""
         try:
             with open("./config/email_credentials.json") as config_file:
                 email_config = json.load(config_file)
         except FileNotFoundError:
-            self.terminate("Could not open email configuration file")
+            self.terminate("Could not access email configuration file")
         sender = email_config.get("sender_email")
         message = MIMEText(content)
         message["Subject"] = "Vaccine Availability Notification"

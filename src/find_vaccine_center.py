@@ -1,21 +1,22 @@
+"""Module containing functions to find vaccine availability schedule in a given area"""
 import argparse
 import re
-
 from random import randint
 from time import sleep, strftime, localtime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 from vaccine_helper import VaccineHelper
 
 class FindVaccineCenter(VaccineHelper):
-
+    """Class containing functions to find vaccine centers"""
     def __init__(self):
+        """Constructor"""
         super().__init__()
         self.parser = argparse.ArgumentParser()
         self.define_arguments(self.parser)
 
     @staticmethod
     def define_arguments(parser):
+        """"Defines command line arguments"""
         parser.add_argument("--district",
                             dest="district_id",
                             type=int,
@@ -49,6 +50,7 @@ class FindVaccineCenter(VaccineHelper):
                             help="Specify option to run script on a loop")
 
     def validate_input(self, args):
+        """Validates use input"""
         if (not args.district_id and not args.pin) or (args.district_id and args.pin):
             self.terminate("Specify either --district or --pin")
         if args.district_id:
@@ -63,6 +65,7 @@ class FindVaccineCenter(VaccineHelper):
             self.terminate("Invalid recipient email address")
 
     def get_vaccine_centers_by_district(self, district_id, date):
+        """Finds a list of vaccine centers in a given district"""
         api_endpoint = "/v2/appointment/sessions/public/calendarByDistrict"
         parameters = {
             "district_id": district_id,
@@ -71,6 +74,7 @@ class FindVaccineCenter(VaccineHelper):
         return self.get_vaccine_centers(api_endpoint, parameters)
 
     def get_vaccine_centers_by_pin(self, pin, date):
+        """Finds a list of vaccine centers belonging to a given Pincode"""
         api_endpoint = "/v2/appointment/sessions/public/calendarByPin"
         parameters = {
             "pincode": pin,
