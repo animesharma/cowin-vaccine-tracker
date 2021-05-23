@@ -81,6 +81,7 @@ if __name__ == "__main__":
     args = tracker.parser.parse_args()
     tracker.validate_input(args)
     while(True):
+        email_sent = False
         with ThreadPoolExecutor() as executor:
             if args.district_id:
                 future_centers = {executor.submit(tracker.get_vaccine_centers_by_district, district_id, strftime("%d-%m-%Y")):\
@@ -103,7 +104,6 @@ if __name__ == "__main__":
                     if centers:
                         message_body, checksum = tracker.create_formatted_message(centers)
                         print(message_body)
-                        email_sent = False
                         if args.recipient and checksum not in tracker.sent_email_checksums:
                             tracker.send_email_notification(args.recipient, message_body)
                             tracker.sent_email_checksums.add(checksum)
