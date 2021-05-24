@@ -11,7 +11,7 @@ class VaccineHelper:
     def __init__(self):
         """Constructor"""
         self.base_url = "https://cdn-api.co-vin.in/api"
-        self.sent_email_checksums = {}
+        self.sent_email_checksums = set()
 
     @staticmethod
     def terminate(error):
