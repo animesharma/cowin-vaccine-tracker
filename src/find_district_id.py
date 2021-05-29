@@ -43,12 +43,6 @@ class FindDistrictID(VaccineHelper):
             return response.json().get("districts")
         self.terminate("Failed to fetch District IDs, please try again later")
 
-    @staticmethod
-    def compare(str1, str2):
-        """Compares two strings while ignoring any whitespaces and special characters"""
-        return [char.lower() for char in str1 if char.isalpha()] == \
-               [char.lower() for char in str2 if char.isalpha()]
-
     def match_state_to_id(self, input_state, states):
         """Compares user input to state list and returns StateID if match is found"""
         for state in states:

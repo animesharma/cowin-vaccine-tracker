@@ -13,6 +13,7 @@ class FindVaccineCenter(VaccineHelper):
         super().__init__()
         self.parser = argparse.ArgumentParser()
         self.define_arguments(self.parser)
+        self.vaccines = {"COVAXIN", "COVISHIELD", "SPUTNIK V"}
 
     @staticmethod
     def define_arguments(parser):
@@ -34,16 +35,16 @@ class FindVaccineCenter(VaccineHelper):
                             help="Minimum Age Limit - 18 or 45")
         parser.add_argument("--vaccine",
                             dest="vaccine",
-                            choices=["COVAXIN", "COVISHIELD", "SPUTNIK V"],
-                            help="Preferred Vaccine: COVAXIN, COVISHIELD or SUPTNIK V. \
+                            help="Preferred Vaccine: COVAXIN, COVISHIELD or SPUTNIK V. \
                                   Shows any available by default")
         parser.add_argument("--dose",
                             dest="dose",
                             choices=["first", "second"],
                             help="Filter by first or second dose")
-        parser.add_argument("--recipient",
-                            dest="recipient",
-                            help="Email address to notify vaccine availability")
+        parser.add_argument("--recipients",
+                            dest="recipients",
+                            nargs="*",
+                            help="Email addresses to notify vaccine availability")
         parser.add_argument("--loop",
                             dest="loop",
                             action="store_true",
@@ -61,8 +62,12 @@ class FindVaccineCenter(VaccineHelper):
             for pin in args.pin:
                 if not re.fullmatch(r"^\d\d\d\d\d\d$", str(pin)):
                     self.terminate("Invalid Pincode")
-        if args.recipient and not re.fullmatch(r"[^@]+@[^@]+\.[^@]+", args.recipient):
-            self.terminate("Invalid recipient email address")
+        if args.recipients:
+            for recipient in args.recipients:
+                if not re.fullmatch(r"[^@]+@[^@]+\.[^@]+", recipient):
+                    self.terminate("Invalid recipient email address(es)")
+        if args.vaccine and args.vaccine.upper() not in self.vaccines:
+            self.terminate("Invalid vaccine. Select one of {}".format(self.vaccines))
 
     def get_vaccine_centers_by_district(self, district_id, date):
         """Finds a list of vaccine centers in a given district"""
@@ -110,8 +115,8 @@ if __name__ == "__main__":
                     if centers:
                         message_body, checksum = tracker.create_formatted_message(centers)
                         print(message_body)
-                        if args.recipient and checksum not in tracker.sent_email_checksums:
-                            tracker.send_email_notification(args.recipient, message_body)
+                        if args.recipients and checksum not in tracker.sent_email_checksums:
+                            tracker.send_email_notification(args.recipients, message_body)
                             tracker.sent_email_checksums.add(checksum)
                             email_sent = True
                     else:
@@ -121,5 +126,5 @@ if __name__ == "__main__":
                     print('Identifier %r generated an exception: %s' % (identifier, exc))
         if not args.loop:
             break
-        wait_time = randint(1200, 2400) if email_sent else randint(45, 90)
+        wait_time = randint(1200, 2400) if email_sent else randint(12, 24)
         sleep(wait_time)

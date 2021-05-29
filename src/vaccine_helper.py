@@ -69,7 +69,7 @@ class VaccineHelper:
         checksum = self.calculate_checksum(message_body)
         return message_body, checksum
 
-    def send_email_notification(self, recipient, content):
+    def send_email_notification(self, recipients, content):
         """Function to send a vaccine availability notification email"""
         try:
             with open("./config/email_credentials.json") as config_file:
@@ -80,7 +80,13 @@ class VaccineHelper:
         message = MIMEText(content)
         message["Subject"] = "Vaccine Availability Notification"
         message["From"] = sender
-        message["To"] = recipient
+        message["To"] = ", ".join(recipients)
         with smtplib.SMTP_SSL(email_config.get("smtp_url"), email_config.get("smtp_port")) as mail_server:
             mail_server.login(sender, email_config.get("password"))
-            mail_server.sendmail(sender, recipient, message.as_string())
+            mail_server.sendmail(sender, recipients, message.as_string())
+
+    @staticmethod
+    def compare(str1, str2):
+        """Compares two strings while ignoring any whitespaces and special characters"""
+        return [char.lower() for char in str1 if char.isalpha()] == \
+               [char.lower() for char in str2 if char.isalpha()]
