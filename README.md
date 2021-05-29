@@ -13,18 +13,18 @@ Requires an India based IP Address.
 > python .\src\find_vaccine_center.py -h
 usage: find_vaccine_center.py [-h] [--district [DISTRICT_ID ...]] [--pin [PIN ...]] [--age {18,45}] [--vaccine {COVAXIN,COVISHIELD,SPUTNIK V}] [--dose {first,second}] [--recipient RECIPIENT] [--loop]
 ​
+
 optional arguments:
   -h, --help            show this help message and exit
   --district [DISTRICT_ID ...]
                         District ID (3 digits) to find vaccine centers
   --pin [PIN ...]       PIN Code (6 digits) to find vaccine centers
   --age {18,45}         Minimum Age Limit - 18 or 45
-  --vaccine {COVAXIN,COVISHIELD,SPUTNIK V}
-                        Preferred Vaccine: COVAXIN, COVISHIELD or SUPTNIK V. Shows any available by default
+  --vaccine VACCINE     Preferred Vaccine: COVAXIN, COVISHIELD or SPUTNIK V. Shows any available by default
   --dose {first,second}
                         Filter by first or second dose
-  --recipient RECIPIENT
-                        Email address to notify vaccine availability
+  --recipients [RECIPIENTS ...]
+                        Email addresses to notify vaccine availability
   --loop                Specify option to run script on a loop
 ```
 #### This script can get vaccine availablity information based on two parameters - Pincode or DistrictID
@@ -99,7 +99,7 @@ NOTE: You can specify multiple Pincodes (space separated)
 - `--dose` allows filtering results based on required dose.
   Accepeted values are `first` and `second`
 - `--loop` runs the script indefinitely, retriving updated information every minute or so.
-- `--recipient` allows user to specify a recipient email address that will recieve notification emails when vaccine slots are available. Use only after setting up an SMTP client.
+- `--recipients` allows user to specify one or more recipient email address that will recieve notification emails when vaccine slots are available. Use only after setting up an SMTP client.
 ​
 ### Setting up and SMTP client:
 Settings for the SMTP client are taken from the configuration file located at `./config/email_credentials.json`. A sample configuration file would look like:
