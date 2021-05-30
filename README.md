@@ -65,6 +65,10 @@ Session 1:
         Available Second Dose Capacity: 47
         Minimum Age Limit: 18
         Vaccine: COVISHIELD
+        Fee Type: Paid
+        Vaccine Fee:
+                - COVISHIELD: 850
+                - COVAXIN: 1250
 ​
 Book your slot now at: https://selfregistration.cowin.gov.in/
 ```
@@ -86,6 +90,9 @@ Session 1:
         Minimum Age Limit: 18
         Vaccine: COVISHIELD
         Fee Type: Paid
+        Vaccine Fee:
+                - COVISHIELD: 850
+                - COVAXIN: 1250
 ​
 Book your slot now at: https://selfregistration.cowin.gov.in/
 ```
@@ -113,4 +120,4 @@ Settings for the SMTP client are taken from the configuration file located at `.
 }
 ​
 ```
-These credentials will be used to send email notifications about vaccine availability to the recipient specified by the `--recipient` argument. Ensure that this information is accurately filled, otherwise email notifications will not work.
+These credentials will be used to send email notifications about vaccine availability to the recipient(s) specified by the `--recipients` argument. Ensure that this information is accurately filled, otherwise email notifications will not work.
