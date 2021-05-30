@@ -64,8 +64,13 @@ class VaccineHelper:
                 message_body += "\tAvailable Second Dose Capacity: " + str(session.get("available_capacity_dose2")) + "\n"
                 message_body += "\tMinimum Age Limit: " + str(session.get("min_age_limit")) + "\n"
                 message_body += "\tVaccine: " + session.get("vaccine") + "\n"
-                message_body += "\tFee Type: " + center.get("fee_type") + "\n\n"
-        message_body += "Book your slot now at: https://selfregistration.cowin.gov.in/\n\n"
+            message_body += "\tFee Type: " + center.get("fee_type") + "\n"
+            if center.get("vaccine_fees"):
+                message_body += "\tVaccine Fee:\n"
+                for item in center.get("vaccine_fees"):
+                    message_body += "\t\t- " + item.get("vaccine") + ": " + item.get("fee") + "\n"
+            else: message_body += "\n"
+        message_body += "\nBook your slot now at: https://selfregistration.cowin.gov.in/\n"
         checksum = self.calculate_checksum(message_body)
         return message_body, checksum
 
